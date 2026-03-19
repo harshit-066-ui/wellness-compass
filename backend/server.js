@@ -40,8 +40,6 @@ app.use(cors({
   maxAge: 86400,  // cache preflight 24 hours
 }));
 
-// Safety net: ensure OPTIONS is handled even if middleware misses
-app.options('/*', cors());
 
 app.use(express.json({ limit: '2mb' }));
 
