@@ -1,6 +1,11 @@
 import { getSupabase } from '../utils/supabase.js';
 
 export const authMiddleware = async (req, res, next) => {
+  // ✅ CRITICAL FIX: allow preflight requests
+  if (req.method === 'OPTIONS') {
+    return next();
+  }
+
   const authHeader = req.headers.authorization;
   const anonymousId = req.headers['x-anonymous-id'];
 
@@ -27,22 +32,17 @@ export const authMiddleware = async (req, res, next) => {
   };
 
   // ── DATA MIGRATION LOGIC ──────────────────────────────────────────────────
-  // If anonymousId is provided, migrate data once.
-  // In a real production app, we might want to check if migration already happened
-  // or use a more robust way to trigger this. For now, we follow the requirement:
-  // "When a user logs in for the first time: Update those records to attach authenticated user_id"
-  
   if (anonymousId) {
     try {
       const tables = ['survey_results', 'plans', 'habits', 'messages'];
-      
+
       for (const table of tables) {
         const { error: updateError } = await supabase
           .from(table)
           .update({ user_id: req.user.id })
           .eq('anonymous_id', anonymousId)
-          .is('user_id', null); // Only update if not already migrated
-          
+          .is('user_id', null);
+
         if (updateError) {
           console.warn(`[Migration] Failed to migrate table ${table}:`, updateError.message);
         }
