@@ -15,8 +15,11 @@ import { authMiddleware } from './middleware/authMiddleware.js';
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// ✅ BUILD VERSION LOG (VERY IMPORTANT)
+console.log("SERVER VERSION: CLEAN BUILD V2 🚀");
+
 // ────────────────────────────────────────────────
-// 1. MIDDLEWARE
+// MIDDLEWARE
 // ────────────────────────────────────────────────
 app.use(helmet());
 
@@ -35,11 +38,7 @@ app.use(cors({
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Anonymous-ID'],
-  exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  maxAge: 86400,
+  credentials: true
 }));
 
 app.use(express.json({ limit: '2mb' }));
@@ -55,7 +54,7 @@ app.use((req, res, next) => {
 });
 
 // ────────────────────────────────────────────────
-// 2. API ROUTES
+// API ROUTES
 // ────────────────────────────────────────────────
 app.use('/api/survey', authMiddleware, surveyRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
@@ -66,35 +65,40 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// ✅ FIXED (regex instead of *)
-app.all(/^\/api\/.*/, (req, res) => {
+// ✅ API 404 (Express v5 safe)
+app.use('/api', (req, res) => {
   res.status(404).json({ error: 'API route not found' });
 });
 
 // ────────────────────────────────────────────────
-// 3. STATIC FILES & SPA FALLBACK
+// STATIC + SPA
 // ────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 const frontendPath = path.join(__dirname, '../frontend/dist');
 
 app.use(express.static(frontendPath));
 
-// ✅ FIXED (regex instead of *)
-app.get(/^\/(?!api).*/, (req, res) => {
+// ✅ SPA fallback (no wildcard)
+app.use((req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: 'Not found' });
+  }
   res.sendFile(path.join(frontendPath, 'index.html'));
 });
 
 // ────────────────────────────────────────────────
-// 4. ERROR HANDLER
+// ERROR HANDLER
 // ────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// ✅ FIXED (Railway binding)
+// ────────────────────────────────────────────────
+// START SERVER (Railway compatible)
+// ────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
 
