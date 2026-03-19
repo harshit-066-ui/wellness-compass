@@ -1,19 +1,19 @@
 import express from 'express';
 
 const app = express();
-const PORT = process.env.PORT || 8080;
 
-// Basic test route
+const PORT = process.env.PORT;
+
+console.log("🚨 PORT VALUE:", PORT);
+
 app.get('/', (req, res) => {
-  res.send('✅ Backend is working');
+  res.send('WORKING');
 });
 
-// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Start server
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 TEST SERVER running on ${PORT}`);
+  console.log(`🚀 Listening on ${PORT}`);
 });
