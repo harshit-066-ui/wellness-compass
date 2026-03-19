@@ -41,7 +41,7 @@ app.use(cors({
 }));
 
 // Safety net: ensure OPTIONS is handled even if middleware misses
-app.options('*', cors());
+app.options('/*', cors());
 
 app.use(express.json({ limit: '2mb' }));
 
