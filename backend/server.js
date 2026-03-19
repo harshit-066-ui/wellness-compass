@@ -1,8 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { rateLimit } from 'express-rate-limit';
 
 import surveyRoutes from './routes/surveyRoutes.js';
@@ -12,26 +10,15 @@ import analyticsRoutes from './routes/analyticsRoutes.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 
-console.log("SERVER VERSION: CLEAN BUILD V2 🚀");
+console.log("🚀 SERVER TEST BUILD STARTING...");
 
 // ────────────────────────────────────────────────
-// 1. CORS (EXPRESS v5 SAFE)
+// 1. SIMPLE CORS (SAFE FOR TESTING)
 // ────────────────────────────────────────────────
-const allowedOrigins = [
-  'https://considerate-harmony-production.up.railway.app',
-  'https://creative-wonder-production-18e4.up.railway.app',
-  'http://localhost:5173'
-];
-
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-
+  res.setHeader('Access-Control-Allow-Origin', '*'); // allow all for now
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader(
     'Access-Control-Allow-Methods',
@@ -42,7 +29,6 @@ app.use((req, res, next) => {
     'Content-Type, Authorization, X-Anonymous-ID'
   );
 
-  // ✅ Handle preflight EARLY
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -51,7 +37,7 @@ app.use((req, res, next) => {
 });
 
 // ────────────────────────────────────────────────
-// 2. MIDDLEWARE
+// 2. BASIC MIDDLEWARE
 // ────────────────────────────────────────────────
 app.use(helmet());
 app.use(express.json({ limit: '2mb' }));
@@ -67,19 +53,17 @@ app.use((req, res, next) => {
 });
 
 // ────────────────────────────────────────────────
-// 3. API ROUTES
+// 3. HEALTH + ROOT (IMPORTANT FOR RAILWAY)
 // ────────────────────────────────────────────────
-app.use('/api/survey', authMiddleware, surveyRoutes);
-app.use('/api/ai', authMiddleware, aiRoutes);
-app.use('/api/habits', authMiddleware, habitRoutes);
-app.use('/api/analytics', authMiddleware, analyticsRoutes);
+app.get('/', (req, res) => {
+  res.send('✅ Backend is running');
+});
 
-// Health check (must always work)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// ✅ DEBUG ROUTE (BEFORE ERROR HANDLER)
+// 🔥 DEBUG SUPABASE
 app.get('/api/debug', async (req, res) => {
   try {
     const { getSupabase } = await import('./utils/supabase.js');
@@ -91,34 +75,29 @@ app.get('/api/debug', async (req, res) => {
 
     return res.json({ message: 'Supabase OK' });
   } catch (err) {
-    console.error('DEBUG ERROR:', err);
+    console.error(err);
     return res.status(500).json({ error: err.message });
   }
 });
 
-// 404 for unknown API routes
+// ────────────────────────────────────────────────
+// 4. API ROUTES
+// ────────────────────────────────────────────────
+app.use('/api/survey', authMiddleware, surveyRoutes);
+app.use('/api/ai', authMiddleware, aiRoutes);
+app.use('/api/habits', authMiddleware, habitRoutes);
+app.use('/api/analytics', authMiddleware, analyticsRoutes);
+
+// catch unknown API routes
 app.all(/^\/api\/.*/, (req, res) => {
   res.status(404).json({ error: 'API route not found' });
 });
 
 // ────────────────────────────────────────────────
-// 4. STATIC + SPA
-// ────────────────────────────────────────────────
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const frontendPath = path.join(__dirname, '../frontend/dist');
-
-app.use(express.static(frontendPath));
-
-app.get(/^\/(?!api).*/, (req, res) => {
-  res.sendFile(path.join(frontendPath, 'index.html'));
-});
-
-// ────────────────────────────────────────────────
-// 5. ERROR HANDLER (LAST ALWAYS)
+// 5. ERROR HANDLER
 // ────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error('SERVER ERROR:', err);
+  console.error('❌ SERVER ERROR:', err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
