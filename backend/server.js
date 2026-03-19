@@ -1,29 +1,19 @@
 import express from 'express';
 
 const app = express();
-
-// 🔥 MUST use Railway port
 const PORT = process.env.PORT || 8080;
 
-console.log('🚀 TEST SERVER STARTING...');
-
-// ────────────────────────────────────────────────
-// ROOT (Railway health check)
-// ────────────────────────────────────────────────
+// Basic test route
 app.get('/', (req, res) => {
-  res.send('✅ WORKING');
+  res.send('✅ Backend is working');
 });
 
-// ────────────────────────────────────────────────
-// HEALTH CHECK
-// ────────────────────────────────────────────────
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// ────────────────────────────────────────────────
-// START SERVER (IMPORTANT FIX APPLIED)
-// ────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🚀 SERVER RUNNING ON PORT ${PORT}`);
+// Start server
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 TEST SERVER running on ${PORT}`);
 });
