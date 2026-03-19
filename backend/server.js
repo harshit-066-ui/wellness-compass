@@ -20,7 +20,7 @@ app.use(helmet());
 
 const allowedOrigins = [
   'https://creative-wonder-production-18e4.up.railway.app',
-  'http://localhost:5173',           // Vite dev
+  'http://localhost:5173',
   'https://localhost:5173',
   process.env.FRONTEND_URL
 ].filter(Boolean);
@@ -37,9 +37,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'X-Anonymous-ID'],
   exposedHeaders: ['Content-Length', 'X-Requested-With'],
-  maxAge: 86400,  // cache preflight 24 hours
+  maxAge: 86400,
 }));
-
 
 app.use(express.json({ limit: '2mb' }));
 
@@ -48,7 +47,7 @@ app.use(rateLimit({
   max: 200
 }));
 
-// Guest ID fallback and migration support
+// Guest ID fallback
 app.use((req, res, next) => {
   req.guestId = req.headers['x-anonymous-id'] || 'anonymous';
   next();
@@ -64,8 +63,8 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// 3. API 404 HANDLER (for unhandled /api requests)
-app.use('/api', (req, res) => {
+// ✅ FIXED: Express v5 compatible 404 handler
+app.all('/api/*', (req, res) => {
   res.status(404).json({ error: 'API route not found' });
 });
 
@@ -77,9 +76,8 @@ const frontendPath = path.join(__dirname, '../frontend/dist');
 // 4. STATIC FRONTEND SERVING
 app.use(express.static(frontendPath));
 
-// 5. REACT SPA FALLBACK (safe for non-API routes only)
+// 5. REACT SPA FALLBACK
 app.use((req, res) => {
-  // Never serve HTML for anything starting with /api
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ error: 'API route not found' });
   }
@@ -93,6 +91,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-app.listen(PORT,'0.0.0.0', () => {
+// ✅ FIXED: Railway-compatible binding
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on ${PORT}`);
 });
