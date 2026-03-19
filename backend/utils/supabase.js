@@ -8,6 +8,7 @@ export function getSupabase() {
   const url = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_ANON_KEY;
 
+  // 🔥 HARD FAIL if missing (prevents silent crashes later)
   if (!url || !key) {
     console.error('❌ Supabase ENV missing');
     return null;
