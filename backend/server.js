@@ -97,7 +97,4 @@ app.use((err, req, res, next) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on ${PORT}`);
 });
-// ✅ FIXED: Railway-compatible binding
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on ${PORT}`);
-});
+
