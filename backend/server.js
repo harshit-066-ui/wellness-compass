@@ -21,25 +21,14 @@ const PORT = process.env.PORT || 5000;
 app.use(helmet());
 
 // ✅ FINAL CORS (Express v5 safe)
-const allowedOrigins = [
-  'https://considerate-harmony-production.up.railway.app',
-  'http://localhost:5173',
-  'https://localhost:5173'
-];
-
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true); // allow non-browser requests
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error(`CORS blocked: ${origin}`));
-  },
+  origin: [
+    'https://considerate-harmony-production.up.railway.app',
+    'http://localhost:5173',
+    'https://localhost:5173'
+  ],
   credentials: true
 }));
-
 app.use(express.json({ limit: '2mb' }));
 
 app.use(rateLimit({
