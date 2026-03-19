@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 5000;
 console.log("SERVER VERSION: CLEAN BUILD V2 🚀");
 
 // ────────────────────────────────────────────────
-// 1. CORS (MANUAL - EXPRESS V5 SAFE)
+// 1. CORS (EXPRESS v5 SAFE)
 // ────────────────────────────────────────────────
 const allowedOrigins = [
   'https://considerate-harmony-production.up.railway.app',
@@ -42,7 +42,7 @@ app.use((req, res, next) => {
     'Content-Type, Authorization, X-Anonymous-ID'
   );
 
-  // ✅ CRITICAL: Handle preflight BEFORE anything else
+  // ✅ Handle preflight EARLY
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
@@ -51,7 +51,7 @@ app.use((req, res, next) => {
 });
 
 // ────────────────────────────────────────────────
-// 2. OTHER MIDDLEWARE
+// 2. MIDDLEWARE
 // ────────────────────────────────────────────────
 app.use(helmet());
 app.use(express.json({ limit: '2mb' }));
@@ -74,17 +74,35 @@ app.use('/api/ai', authMiddleware, aiRoutes);
 app.use('/api/habits', authMiddleware, habitRoutes);
 app.use('/api/analytics', authMiddleware, analyticsRoutes);
 
+// Health check (must always work)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// ✅ Express v5 safe catch-all
+// ✅ DEBUG ROUTE (BEFORE ERROR HANDLER)
+app.get('/api/debug', async (req, res) => {
+  try {
+    const { getSupabase } = await import('./utils/supabase.js');
+    const supabase = getSupabase();
+
+    if (!supabase) {
+      return res.json({ error: 'Supabase NOT initialized' });
+    }
+
+    return res.json({ message: 'Supabase OK' });
+  } catch (err) {
+    console.error('DEBUG ERROR:', err);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// 404 for unknown API routes
 app.all(/^\/api\/.*/, (req, res) => {
   res.status(404).json({ error: 'API route not found' });
 });
 
 // ────────────────────────────────────────────────
-// 4. STATIC + SPA FALLBACK
+// 4. STATIC + SPA
 // ────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,7 +115,7 @@ app.get(/^\/(?!api).*/, (req, res) => {
 });
 
 // ────────────────────────────────────────────────
-// 5. ERROR HANDLER
+// 5. ERROR HANDLER (LAST ALWAYS)
 // ────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('SERVER ERROR:', err);
@@ -105,7 +123,7 @@ app.use((err, req, res, next) => {
 });
 
 // ────────────────────────────────────────────────
-// 6. START SERVER (RAILWAY SAFE)
+// 6. START SERVER
 // ────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
