@@ -1,7 +1,6 @@
 import 'dotenv/config';
 import express from 'express';
 import helmet from 'helmet';
-import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { rateLimit } from 'express-rate-limit';
@@ -18,38 +17,43 @@ const PORT = process.env.PORT || 5000;
 console.log("SERVER VERSION: CLEAN BUILD V2 🚀");
 
 // ────────────────────────────────────────────────
-// 1. MIDDLEWARE
+// 1. CORS (FINAL FIX - NO cors() PACKAGE)
 // ────────────────────────────────────────────────
-app.use(helmet());
-
-// ✅ FIXED: allow your Railway frontend
 const allowedOrigins = [
-  'https://considerate-harmony-production.up.railway.app', // ✅ YOUR FRONTEND
+  'https://considerate-harmony-production.up.railway.app',
   'https://creative-wonder-production-18e4.up.railway.app',
-  'http://localhost:5173',
-  'https://localhost:5173',
-  process.env.FRONTEND_URL
-].filter(Boolean);
+  'http://localhost:5173'
+];
 
-// ✅ SIMPLE + RELIABLE CORS (no breaking logic)
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true
-}));
-
-// ✅ IMPORTANT: handle preflight properly (Express v5 safe)
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Anonymous-ID');
-  res.header('Access-Control-Allow-Credentials', 'true');
+  const origin = req.headers.origin;
 
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET,POST,PUT,PATCH,DELETE,OPTIONS'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Type, Authorization, X-Anonymous-ID'
+  );
+
+  // ✅ Handle preflight requests properly
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
 
   next();
 });
+
+// ────────────────────────────────────────────────
+// 2. OTHER MIDDLEWARE
+// ────────────────────────────────────────────────
+app.use(helmet());
 
 app.use(express.json({ limit: '2mb' }));
 
@@ -64,7 +68,7 @@ app.use((req, res, next) => {
 });
 
 // ────────────────────────────────────────────────
-// 2. API ROUTES
+// 3. API ROUTES
 // ────────────────────────────────────────────────
 app.use('/api/survey', authMiddleware, surveyRoutes);
 app.use('/api/ai', authMiddleware, aiRoutes);
@@ -75,13 +79,13 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
 
-// ✅ Express v5 SAFE (no "*")
+// ✅ Express v5 safe catch-all (NO "*")
 app.all(/^\/api\/.*/, (req, res) => {
   res.status(404).json({ error: 'API route not found' });
 });
 
 // ────────────────────────────────────────────────
-// 3. STATIC (optional)
+// 4. STATIC + SPA FALLBACK
 // ────────────────────────────────────────────────
 const __filename = fileURLToPath(import.meta.url);
 const __dirname  = path.dirname(__filename);
@@ -94,14 +98,16 @@ app.get(/^\/(?!api).*/, (req, res) => {
 });
 
 // ────────────────────────────────────────────────
-// 4. ERROR HANDLER
+// 5. ERROR HANDLER
 // ────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Railway binding
+// ────────────────────────────────────────────────
+// 6. START SERVER (Railway compatible)
+// ────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
