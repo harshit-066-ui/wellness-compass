@@ -2,7 +2,10 @@ import axios from 'axios';
 import { supabase } from './supabaseClient';
 
 // Use env variable if available, otherwise fallback to local API
-const API_BASE = import.meta.env.VITE_API_URL || '/api/';
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api`
+  : '/api';
+
 
 const http = axios.create({
   baseURL: API_BASE
