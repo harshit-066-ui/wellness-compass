@@ -86,7 +86,7 @@ export default function Login() {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <label htmlFor="password" style={{ fontSize: '0.9rem', fontWeight: '500' }}>Password (Optional)</label>
+              <label htmlFor="password" style={{ fontSize: '0.9rem', fontWeight: '500' }}>Password (Optional/for dev team only)</label>
               <input
                 id="password"
                 type="password"
